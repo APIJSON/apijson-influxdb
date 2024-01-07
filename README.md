@@ -2,8 +2,9 @@
 腾讯 [APIJSON](https://github.com/Tencent/APIJSON) 6.1.0+ 的 InfluxDB 数据库插件，可通过 Maven, Gradle 等远程依赖。<br />
 A InfluxDB plugin for Tencent [APIJSON](https://github.com/Tencent/APIJSON) 6.1.0+
 
-![image](https://private-user-images.githubusercontent.com/5738175/294745614-2d56650b-8f07-4453-b94f-786390d5439b.png)
-![image](https://private-user-images.githubusercontent.com/5738175/294745622-b8250138-ca93-4df7-b027-cb3981a1d828.png)
+![image](https://github.com/APIJSON/apijson-influxdb/assets/5738175/6634f657-8ef7-458a-a511-8f2ca1acfa39)
+![image](https://github.com/APIJSON/apijson-influxdb/assets/5738175/3c2919b6-f90a-4a9e-9fb7-592eb4c1a6bb)
+
 
 ## 添加依赖
 ## Add Dependency
