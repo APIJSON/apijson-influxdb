@@ -39,15 +39,26 @@ import static apijson.orm.AbstractSQLExecutor.KEY_RAW_LIST;
  * @see DemoSQLExecutor 重写 execute 方法：
  *     \@Override
  *      public JSONObject execute(@NotNull SQLConfig<Long> config, boolean unknownType) throws Exception {
- *          if (config.isMilvus()) {
- *              return MilvusUtil.execute(config, null, unknownType);
+ *          if (config.isInfluxDB()) {
+ *              return InfluxDBUtil.execute(config, null, unknownType);
  *          }
  *
  *          return super.execute(config, unknownType);
  *     }
+ *
+ *     DemoSQLConfig 重写方法 getSchema, getSQLSchema 方法
+ *    \@Override
+ *     public String getSchema() {
+ * 	       return InfluxDBUtil.getSchema(super.getSchema(), DEFAULT_SCHEMA, isInfluxDB());
+ *     }
+ *
+ *    \@Override
+ *     public String getSQLSchema() {
+ * 		   return InfluxDBUtil.getSQLSchema(super.getSQLSchema(), isInfluxDB());
+ *     }
  */
 public class InfluxDBUtil {
-    public static final String TAG = "MilvusUtil";
+    public static final String TAG = "InfluxDBUtil";
 
     public static String getSchema(String schema, String defaultSchema) {
         return getSchema(schema, defaultSchema, true);
