@@ -49,6 +49,87 @@ import static apijson.orm.AbstractSQLExecutor.KEY_RAW_LIST;
 public class InfluxDBUtil {
     public static final String TAG = "MilvusUtil";
 
+    public static String getSchema(String schema, String defaultSchema) {
+        return getSchema(schema, defaultSchema, true);
+    }
+    public static String getSchema(String schema, String defaultSchema, boolean isInfluxDB) {
+        if (StringUtil.isEmpty(schema) && isInfluxDB) {
+            schema = defaultSchema;
+        }
+        return schema;
+    }
+
+    public static String getSQLSchema(String schema) {
+        return getSQLSchema(schema, true);
+    }
+    public static String getSQLSchema(String schema, boolean isInfluxDB) {
+        return isInfluxDB ? null : schema;
+    }
+
+    public static <T> String getClientKey(@NotNull SQLConfig<T> config) {
+        String uri = config.getDBUri();
+        return uri + (uri.contains("?") ? "&" : "?") + "username=" + config.getDBAccount();
+    }
+
+    public static final Map<String, InfluxDB> CLIENT_MAP = new LinkedHashMap<>();
+    public static <T> InfluxDB getClient(@NotNull SQLConfig<T> config) {
+        return getClient(config, true);
+    }
+    public static <T> InfluxDB getClient(@NotNull SQLConfig<T> config, boolean autoNew) {
+        String key = getClientKey(config);
+
+        InfluxDB client = CLIENT_MAP.get(key);
+        if (autoNew && client == null) {
+            client = InfluxDBFactory.connect(config.getDBUri(), config.getDBAccount(), config.getDBPassword());
+            client.setDatabase(config.getSchema());
+
+            client.enableBatch(
+                    BatchOptions.DEFAULTS
+                            .threadFactory(runnable -> {
+                                Thread thread = new Thread(runnable);
+                                thread.setDaemon(true);
+                                return thread;
+                            })
+            );
+
+            Runtime.getRuntime().addShutdownHook(new Thread(client::close));
+            
+            CLIENT_MAP.put(key, client);
+        }
+
+        return client;
+    }
+
+    public static <T> void closeClient(@NotNull SQLConfig<T> config) {
+        InfluxDB client = getClient(config, false);
+        if (client != null) {
+            String key = getClientKey(config);
+            CLIENT_MAP.remove(key);
+
+//            try {
+            client.close();
+//            }
+//            catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+        }
+    }
+
+    public static <T> void closeAllClient() {
+        Collection<InfluxDB> cs = CLIENT_MAP.values();
+        for (InfluxDB c : cs) {
+            try {
+                c.close();
+            }
+            catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        CLIENT_MAP.clear();
+    }
+
+
     public static <T> JSONObject execute(@NotNull SQLConfig<T> config, String sql, boolean unknownType) throws Exception {
         if (RequestMethod.isQueryMethod(config.getMethod())) {
             List<JSONObject> list = executeQuery(config, sql, unknownType);
@@ -73,21 +154,14 @@ public class InfluxDBUtil {
     }
 
     public static <T> JSONObject executeUpdate(SQLConfig<T> config, String sql) throws Exception {
-        InfluxDB influxDB = InfluxDBFactory.connect(config.getDBUri(), config.getDBAccount(), config.getDBPassword());
-        influxDB.setDatabase(config.getSchema());
+        return executeUpdate(null, config, sql);
+    }
+    public static <T> JSONObject executeUpdate(InfluxDB client, SQLConfig<T> config, String sql) throws Exception {
+        if (client == null) {
+            client = getClient(config);
+        }
 
-        influxDB.enableBatch(
-                BatchOptions.DEFAULTS
-                        .threadFactory(runnable -> {
-                            Thread thread = new Thread(runnable);
-                            thread.setDaemon(true);
-                            return thread;
-                        })
-        );
-
-        Runtime.getRuntime().addShutdownHook(new Thread(influxDB::close));
-
-        influxDB.write(StringUtil.isEmpty(sql) ? config.getSQL(false) : sql);
+        client.write(StringUtil.isEmpty(sql) ? config.getSQL(false) : sql);
 
         JSONObject result = AbstractParser.newSuccessResult();
 
@@ -117,10 +191,31 @@ public class InfluxDBUtil {
         return result;
     }
 
+
+    public static <T> JSONObject execQuery(@NotNull SQLConfig<T> config, String sql, boolean unknownType) throws Exception {
+        List<JSONObject> list = executeQuery(config, sql, unknownType);
+        JSONObject result = list == null || list.isEmpty() ? null : list.get(0);
+        if (result == null) {
+            result = new JSONObject(true);
+        }
+
+        if (list != null && list.size() > 1) {
+            result.put(KEY_RAW_LIST, list);
+        }
+
+        return result;
+    }
+
     public static <T> List<JSONObject> executeQuery(@NotNull SQLConfig<T> config, String sql, boolean unknownType) throws Exception {
-        InfluxDB influxDB = InfluxDBFactory.connect(config.getDBUri(), config.getDBAccount(), config.getDBPassword());
-        influxDB.setDatabase(config.getSchema());
-        QueryResult qr = influxDB.query(new Query(StringUtil.isEmpty(sql) ? config.getSQL(false) : sql));
+        return executeQuery(null, config, sql, unknownType);
+    }
+    public static <T> List<JSONObject> executeQuery(InfluxDB client, @NotNull SQLConfig<T> config, String sql, boolean unknownType) throws Exception {
+        if (client == null) {
+            client = getClient(config);
+        }
+
+        client.setDatabase(config.getSchema());
+        QueryResult qr = client.query(new Query(StringUtil.isEmpty(sql) ? config.getSQL(false) : sql));
 
         String err = qr == null ? null : qr.getError();
         if (StringUtil.isNotEmpty(err, true)) {
@@ -166,5 +261,6 @@ public class InfluxDBUtil {
 
         return resultList;
     }
+
 
 }
