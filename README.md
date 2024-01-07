@@ -82,6 +82,21 @@ Override execute in your SQLExecutor extends AbstractSQLExecutor
         }
 ```
 
+<br/>
+在你项目继承 AbstractSQLConfig 的子类重写方法 execute <br/>
+Override execute in your SQLConfig extends AbstractSQLConfig
+```java
+	@Override
+	public String getSchema() {
+		return InfluxDBUtil.getSchema(super.getSchema(), DEFAULT_SCHEMA, isInfluxDB());
+	}
+
+	@Override
+	public String getSQLSchema() {
+		return InfluxDBUtil.getSQLSchema(super.getSQLSchema(), isInfluxDB());
+	}
+```
+
 #### 见 [InfluxDBUtil](/src/main/java/apijson/influxdb/InfluxDBUtil.java) 的注释及 [APIJSONBoot-MultiDataSource](https://github.com/APIJSON/APIJSON-Demo/blob/master/APIJSON-Java-Server/APIJSONBoot-MultiDataSource) 的 [DemoSQLExecutor](https://github.com/APIJSON/APIJSON-Demo/blob/master/APIJSON-Java-Server/APIJSONBoot-MultiDataSource/src/main/java/apijson/demo/DemoSQLExecutor.java) <br />
 
 #### See document in [InfluxDBUtil](/src/main/java/apijson/influxdb/InfluxDBUtil.java) and [DemoSQLExecutor](https://github.com/APIJSON/APIJSON-Demo/blob/master/APIJSON-Java-Server/APIJSONBoot-MultiDataSource/src/main/java/apijson/demo/DemoSQLExecutor.java) in [APIJSONBoot-MultiDataSource](https://github.com/APIJSON/APIJSON-Demo/blob/master/APIJSON-Java-Server/APIJSONBoot-MultiDataSource)
