@@ -71,6 +71,7 @@ https://github.com/APIJSON/APIJSON-Demo/blob/master/APIJSON-Java-Server/APIJSONB
 
 在你项目继承 AbstractSQLExecutor 的子类重写方法 execute <br/>
 Override execute in your SQLExecutor extends AbstractSQLExecutor
+
 ```java
         @Override
         public JSONObject execute(@NotNull SQLConfig<Long> config, boolean unknownType) throws Exception {
@@ -85,6 +86,7 @@ Override execute in your SQLExecutor extends AbstractSQLExecutor
 <br/>
 在你项目继承 AbstractSQLConfig 的子类重写方法 execute <br/>
 Override execute in your SQLConfig extends AbstractSQLConfig
+
 ```java
 	@Override
 	public String getSchema() {
